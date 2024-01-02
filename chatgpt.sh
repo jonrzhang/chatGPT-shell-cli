@@ -12,6 +12,8 @@ CHATGPT_CYAN_LABEL="\033[36mchatgpt \033[0m"
 PROCESSING_LABEL="\n\033[90mProcessing... \033[0m\033[0K\r"
 OVERWRITE_PROCESSING_LINE="             \033[0K\r"
 
+OPENAI_API="api.openai.com"
+
 if [[ -z "$OPENAI_KEY" ]]; then
 	echo "You need to set your OPENAI_KEY to use this script"
 	echo "You can set it temporarily by running this on your terminal: export OPENAI_KEY=YOUR_KEY_HERE"
@@ -64,6 +66,7 @@ Options:
                              its previous answers. It also makes models
                              aware of todays date and what data it was trained
                              on.
+  -a, --api - Provide API address to replace the "api.openai.com"
 
 EOF
 }
@@ -81,7 +84,7 @@ handle_error() {
 # request to openAI API models endpoint. Returns a list of models
 # takes no input parameters
 list_models() {
-	models_response=$(curl https://api.openai.com/v1/models \
+	models_response=$(curl https://${OPENAI_API}/v1/models \
 		-sS \
 		-H "Authorization: Bearer $OPENAI_KEY")
 	handle_error "$models_response"
@@ -94,7 +97,7 @@ list_models() {
 request_to_completions() {
 	local prompt="$1"
 
-	curl https://api.openai.com/v1/completions \
+	curl https://${OPENAI_API}/v1/completions \
 		-sS \
 		-H 'Content-Type: application/json' \
 		-H "Authorization: Bearer $OPENAI_KEY" \
@@ -110,7 +113,7 @@ request_to_completions() {
 # $1 should be the prompt
 request_to_image() {
 	local prompt="$1"
-	image_response=$(curl https://api.openai.com/v1/images/generations \
+	image_response=$(curl https://${OPENAI_API}/v1/images/generations \
 		-sS \
 		-H 'Content-Type: application/json' \
 		-H "Authorization: Bearer $OPENAI_KEY" \
@@ -127,7 +130,7 @@ request_to_chat() {
 	local message="$1"
 	escaped_system_prompt=$(escape "$SYSTEM_PROMPT")
 	
-	curl https://api.openai.com/v1/chat/completions \
+	curl https://${OPENAI_API}/v1/chat/completions \
 		-sS \
 		-H 'Content-Type: application/json' \
 		-H "Authorization: Bearer $OPENAI_KEY" \
@@ -267,6 +270,11 @@ while [[ "$#" -gt 0 ]]; do
 		MULTI_LINE_PROMPT=true
 		shift
 		;;
+	-a | --api)
+		OPENAI_API="$2"
+		shift
+		shift
+		;;
 	-c | --chat-context)
 		CONTEXT=true
 		shift
@@ -367,7 +375,7 @@ while $running; do
 	elif [[ "$prompt" == "models" ]]; then
 		list_models
 	elif [[ "$prompt" =~ ^model: ]]; then
-		models_response=$(curl https://api.openai.com/v1/models \
+		models_response=$(curl https://${OPENAI_API}/v1/models \
 			-sS \
 			-H "Authorization: Bearer $OPENAI_KEY")
 		handle_error "$models_response"
